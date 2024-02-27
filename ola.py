@@ -121,39 +121,23 @@ class GroupByAvgOla(OLA):
         """
         # Implement me!
        
-        # Update the plot
-        # hint: self.update_widget(*list of groups*, *list of estimated group means of mean_col*)
-
-         # Group by the specified column and compute mean
-        # df_sums = df_slice.groupby(self.groupby_col)[self.mean_col].sum()
-        # df_counts = df_slice.groupby(self.groupby_col)[self.mean_col].count()
-        
-        # # Update running means for each group
-        # for group, sums in df_sums.items():
-        #     if group in self.average:
-        #         # Update running mean using incremental formula
-        #         n = len(df_slice[df_slice[self.groupby_col] == group])
-        #         self.average[group] = (self.average[group] + n * mean) / (n + 1)
-        #     else:
-        #         # Initialize running mean for new group
-        #         self.average[group] = mean
-
         grouped_data = df_slice.groupby(self.groupby_col)[self.mean_col].agg(['sum', 'count'])
         
-        # Update running sums and counts for each group
+        # Update running average for each group
         for group, (sums, counts) in grouped_data.iterrows():
             if group in self.sums:
-                # Update running sum and count
+                # Update running average
                 self.sums[group] += sums
                 self.counts[group] += counts
                 self.average[group] = self.sums[group]/self.counts[group]
             else:
-                # Initialize running sum and count for new group
+                # Initialize running average
                 self.sums[group] = sums
                 self.counts[group] = counts
                 self.average[group] = self.sums[group]/self.counts[group]
 
-
+        # Update the plot
+        # hint: self.update_widget(*list of groups*, *list of estimated group means of mean_col*)
 
         self.update_widget(list(self.average.keys()), list(self.average.values()))
 
@@ -174,20 +158,40 @@ class GroupBySumOla(OLA):
         self.sum_col = sum_col
 
         # Put any other bookkeeping class variables you need here...
-        self.sum = []
-        self.indexes = []
+
+        self.sums = {}
+        self.seen_rows = 0
+        self.estimates = {}
+
 
     def process_slice(self, df_slice: pd.DataFrame) -> None:
         """
             Update the running grouped sums with a dataframe slice.
         """
         # Implement me!
-        self.sum += df_slice.groupby(self.groupby_col).sum()[self.mean_col].values
-        self.indexes += df_slice.groupby(self.groupby_col).sum()[self.mean_col].index
+        grouped_sums = df_slice.groupby(self.groupby_col)[self.sum_col].sum()
+
+        self.seen_rows += len(df_slice)  
+
+        # Calculate the percentage of the dataframe seen
+        multiplier  = 1 / (self.seen_rows / self.original_df_num_rows)
+
+        
+        # Update running sums for each group
+        for group, sums in grouped_sums.items():
+            if group in self.sums:
+                # Update running sums
+                self.sums[group] += sums
+                self.estimates[group] = self.sums[group] * multiplier
+                
+            else:
+                # Initialize running sums
+                self.sums[group] = sums
+                self.estimates[group] = self.sums[group] * multiplier
 
         # Update the plot
         # hint: self.update_widget(*list of groups*, *list of estimated grouped sums of sum_col*)
-        self.update_widget(self.indexes, self.sum)
+        self.update_widget(list(self.estimates.keys()), list(self.estimates.values()))
 
 
 
