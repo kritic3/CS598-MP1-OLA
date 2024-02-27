@@ -78,16 +78,23 @@ class FilterAvgOla(OLA):
         self.mean_col = mean_col
 
         # Put any other bookkeeping class variables you need here...
+        self.sum = 0
+        self.count = 0
+        self.average = 0
 
     def process_slice(self, df_slice: pd.DataFrame) -> None:
         """
             Update the running filtered mean with a dataframe slice.
         """
         # Implement me!
-        pass
+        self.sum += df_slice[df_slice[self.filter_col] == self.filter_value].sum()[self.mean_col]
+        self.count += df_slice[df_slice[self.filter_col] == self.filter_value].count()[self.mean_col]
+        self.average = self.sum / self.count
 
         # Update the plot. The filtered mean should be put into a singleton list due to Plotly semantics.
         # hint: self.update_widget([""], *estimated filtered mean of mean_col*)
+        self.update_widget([""], [self.average])
+
 
 
 class GroupByAvgOla(OLA):
@@ -104,16 +111,23 @@ class GroupByAvgOla(OLA):
         self.mean_col = mean_col
 
         # Put any other bookkeeping class variables you need here...
+        self.sum = 0
+        self.count = 0
+        self.average = []
+        self.indexes = ()
 
     def process_slice(self, df_slice: pd.DataFrame) -> None:
         """
             Update the running grouped means with a dataframe slice.
         """
         # Implement me!
-        pass
-
+        self.sum += df_slice.groupby(self.groupby_col).sum()[self.mean_col].values
+        self.count += df_slice.groupby(self.groupby_col).count()[self.mean_col].values
+        self.average = self.sum / self.count
+        self.indexes.update(df_slice.groupby(self.groupby_col).sum()[self.mean_col].index.tolist())
         # Update the plot
         # hint: self.update_widget(*list of groups*, *list of estimated group means of mean_col*)
+        self.update_widget(self.indexes.tolist(), self.average.tolist())
 
 
 class GroupBySumOla(OLA):
@@ -132,16 +146,21 @@ class GroupBySumOla(OLA):
         self.sum_col = sum_col
 
         # Put any other bookkeeping class variables you need here...
+        self.sum = []
+        self.indexes = []
 
     def process_slice(self, df_slice: pd.DataFrame) -> None:
         """
             Update the running grouped sums with a dataframe slice.
         """
         # Implement me!
-        pass
+        self.sum += df_slice.groupby(self.groupby_col).sum()[self.mean_col].values
+        self.indexes += df_slice.groupby(self.groupby_col).sum()[self.mean_col].index
 
         # Update the plot
         # hint: self.update_widget(*list of groups*, *list of estimated grouped sums of sum_col*)
+        self.update_widget(self.indexes, self.sum)
+
 
 
 class GroupByCountOla(OLA):
@@ -160,16 +179,20 @@ class GroupByCountOla(OLA):
         self.count_col = count_col
 
         # Put any other bookkeeping class variables you need here...
+        self.count = []
+        self.indexes = []
 
     def process_slice(self, df_slice: pd.DataFrame) -> None:
         """
             Update the running grouped counts with a dataframe slice.
         """
         # Implement me!
-        pass
+        self.count += df_slice.groupby(self.groupby_col).count()[self.mean_col].values
+        self.indexes += df_slice.groupby(self.groupby_col).count()[self.mean_col].index
 
         # Update the plot
         # hint: self.update_widget(*list of groups*, *list of estimated group counts of count_col*)
+        self.update_widget(self.indexes, self.count)
 
 
 class FilterDistinctOla(OLA):
