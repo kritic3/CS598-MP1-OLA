@@ -145,13 +145,13 @@ class GroupByAvgOla(OLA):
             if group in self.average:
                 # Update running mean using incremental formula
                 count = len(df_slice[df_slice[self.groupby_col] == group])
-                self.average[group] = (self.average[group] + count * mean) / (count + 1)
+                self.average[group] = (self.average[group] + count * avg) / (count + 1)
             else:
                 # Initialize running mean for new group
                 self.average[group] = avg
 
 
-        self.update_widget(self.average.keys(), self.average.values())
+        self.update_widget(list(self.average.keys()), list(self.average.values()))
 
 
 class GroupBySumOla(OLA):
