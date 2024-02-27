@@ -142,7 +142,7 @@ class GroupByAvgOla(OLA):
         
         # Update running means for each group
         for group, avg in df_avg.items():
-            if group in self.avg:
+            if group in self.average:
                 # Update running mean using incremental formula
                 count = len(df_slice[df_slice[self.groupby_col] == group])
                 self.average[group] = (self.average[group] + count * mean) / (count + 1)
