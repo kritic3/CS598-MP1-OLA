@@ -111,23 +111,47 @@ class GroupByAvgOla(OLA):
         self.mean_col = mean_col
 
         # Put any other bookkeeping class variables you need here...
-        self.sum = 0
-        self.count = 0
-        self.average = []
-        self.indexes = ()
+        # self.sums = {} 
+        # self.counts = {}
+        self.average = {}
 
     def process_slice(self, df_slice: pd.DataFrame) -> None:
         """
             Update the running grouped means with a dataframe slice.
         """
         # Implement me!
-        self.sum += df_slice.groupby(self.groupby_col).sum()[self.mean_col].values
-        self.count += df_slice.groupby(self.groupby_col).count()[self.mean_col].values
-        self.average = self.sum / self.count
-        self.indexes.update(df_slice.groupby(self.groupby_col).sum()[self.mean_col].index.tolist())
+       
         # Update the plot
         # hint: self.update_widget(*list of groups*, *list of estimated group means of mean_col*)
-        self.update_widget(self.indexes.tolist(), self.average.tolist())
+
+         # Group by the specified column and compute mean
+        # df_sums = df_slice.groupby(self.groupby_col)[self.mean_col].sum()
+        # df_counts = df_slice.groupby(self.groupby_col)[self.mean_col].count()
+        
+        # # Update running means for each group
+        # for group, sums in df_sums.items():
+        #     if group in self.average:
+        #         # Update running mean using incremental formula
+        #         n = len(df_slice[df_slice[self.groupby_col] == group])
+        #         self.average[group] = (self.average[group] + n * mean) / (n + 1)
+        #     else:
+        #         # Initialize running mean for new group
+        #         self.average[group] = mean
+
+        df_avg = df_slice.groupby(self.groupby_col)[self.mean_col].mean()
+        
+        # Update running means for each group
+        for group, avg in df_avg.items():
+            if group in self.avg:
+                # Update running mean using incremental formula
+                count = len(df_slice[df_slice[self.groupby_col] == group])
+                self.average[group] = (self.average[group] + count * mean) / (count + 1)
+            else:
+                # Initialize running mean for new group
+                self.average[group] = avg
+
+
+        self.update_widget(self.average.keys(), self.average.values())
 
 
 class GroupBySumOla(OLA):
