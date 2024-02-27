@@ -266,13 +266,19 @@ class FilterDistinctOla(OLA):
         self.hll = HyperLogLog(p=2, seed=123456789)
 
         # Put any other bookkeeping class variables you need here...
+        self.count = 0
 
     def process_slice(self, df_slice: pd.DataFrame) -> None:
         """
             Update the running filtered cardinality with a dataframe slice.
         """
         # Implement me!
-        pass
+        filtered_df = df_slice[df_slice[self.filter_col] == self.filter_value]
+        for index, entry in filtered_df.iterrows():
+            self.hll.add(str(entry[self.distinct_col]))
+        
+        self.count = self.hll.cardinality()
 
         # Update the plot. The filtered cardinality should be put into a singleton list due to Plotly semantics.
         # hint: self.update_widget([""], *estimated filtered cardinality of distinct_col*)
+        self.update_widget([""], [self.count])
