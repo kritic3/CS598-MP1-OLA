@@ -211,20 +211,39 @@ class GroupByCountOla(OLA):
         self.count_col = count_col
 
         # Put any other bookkeeping class variables you need here...
-        self.count = []
-        self.indexes = []
+        self.counts = {}
+        self.seen_rows = 0
+        self.estimates = {}
 
     def process_slice(self, df_slice: pd.DataFrame) -> None:
         """
             Update the running grouped counts with a dataframe slice.
         """
         # Implement me!
-        self.count += df_slice.groupby(self.groupby_col).count()[self.mean_col].values
-        self.indexes += df_slice.groupby(self.groupby_col).count()[self.mean_col].index
+        grouped_counts = df_slice.groupby(self.groupby_col)[self.count_col].count()
+
+        self.seen_rows += len(df_slice)  
+
+        # Calculate the percentage of the dataframe seen
+        multiplier  = 1 / (self.seen_rows / self.original_df_num_rows)
+
+        
+        # Update running sums for each group
+        for group, counts in grouped_counts.items():
+            if group in self.counts:
+                # Update running sums
+                self.counts[group] += counts
+                self.estimates[group] = self.counts[group] * multiplier
+                
+            else:
+                # Initialize running sums
+                self.counts[group] = counts
+                self.estimates[group] = self.counts[group] * multiplier
+
 
         # Update the plot
         # hint: self.update_widget(*list of groups*, *list of estimated group counts of count_col*)
-        self.update_widget(self.indexes, self.count)
+        self.update_widget(list(self.estimates.keys()), list(self.estimates.values()))
 
 
 class FilterDistinctOla(OLA):
