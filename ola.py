@@ -111,8 +111,8 @@ class GroupByAvgOla(OLA):
         self.mean_col = mean_col
 
         # Put any other bookkeeping class variables you need here...
-        # self.sums = {} 
-        # self.counts = {}
+        self.sums = {} 
+        self.counts = {}
         self.average = {}
 
     def process_slice(self, df_slice: pd.DataFrame) -> None:
@@ -138,17 +138,21 @@ class GroupByAvgOla(OLA):
         #         # Initialize running mean for new group
         #         self.average[group] = mean
 
-        df_avg = df_slice.groupby(self.groupby_col)[self.mean_col].mean()
+        grouped_data = df_slice.groupby(self.groupby_col)[self.mean_col].agg(['sum', 'count'])
         
-        # Update running means for each group
-        for group, avg in df_avg.items():
-            if group in self.average:
-                # Update running mean using incremental formula
-                count = len(df_slice[df_slice[self.groupby_col] == group])
-                self.average[group] = (self.average[group] + count * avg) / (count + 1)
+        # Update running sums and counts for each group
+        for group, (sums, counts) in grouped_data.iterrows():
+            if group in self.sums:
+                # Update running sum and count
+                self.sums[group] += sums
+                self.counts[group] += counts
+                self.average[group] = self.sums[group]/self.counts[group]
             else:
-                # Initialize running mean for new group
-                self.average[group] = avg
+                # Initialize running sum and count for new group
+                self.sums[group] = sums
+                self.counts[group] = counts
+                self.average[group] = self.sums[group]/self.counts[group]
+
 
 
         self.update_widget(list(self.average.keys()), list(self.average.values()))
